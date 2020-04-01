@@ -22,7 +22,8 @@ mod utils;
 
 use std::env;
 
-fn main() {
+#[actix_rt::main]
+async fn main() {
     dotenv::dotenv().ok();
 
     if env::var("RUST_LOG").ok().is_none() {
@@ -30,9 +31,7 @@ fn main() {
     }
     env_logger::init();
 
-    let sys = actix::System::new("conduit");
+    app::start().await;
 
-    app::start();
-
-    let _ = sys.run();
+    return;
 }

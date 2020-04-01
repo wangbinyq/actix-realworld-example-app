@@ -1,6 +1,5 @@
-use actix_web::{HttpRequest, HttpResponse, web::Path, web::Data};
 use actix_http::error::ResponseError;
-use futures::Future;
+use actix_web::{web::Data, web::Path, HttpRequest, HttpResponse};
 
 use super::AppState;
 use crate::prelude::*;
@@ -51,62 +50,59 @@ pub struct ProfileResponseInner {
 
 // Route handlers ↓
 
-pub fn get(
+pub async fn get(
     state: Data<AppState>,
     (path, req): (Path<ProfilePath>, HttpRequest),
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let db = state.db.clone();
 
-    authenticate(&state, &req)
-        .then(move |auth| {
-            db.send(GetProfile {
-                auth: auth.ok(),
-                username: path.username.to_owned(),
-            })
-            .from_err()
+    let auth = authenticate(&state, &req).await;
+    match db
+        .send(GetProfile {
+            auth: auth.ok(),
+            username: path.username.to_owned(),
         })
-        .and_then(|res| match res {
-            Ok(res) => Ok(HttpResponse::Ok().json(res)),
-            Err(e) => Ok(e.error_response()),
-        })
+        .await?
+    {
+        Ok(res) => Ok(HttpResponse::Ok().json(res)),
+        Err(e) => Ok(e.error_response()),
+    }
 }
 
-pub fn follow(
+pub async fn follow(
     state: Data<AppState>,
     (path, req): (Path<ProfilePath>, HttpRequest),
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let db = state.db.clone();
 
-    authenticate(&state, &req)
-        .and_then(move |auth| {
-            db.send(FollowProfile {
-                auth,
-                username: path.username.to_owned(),
-            })
-            .from_err()
+    let auth = authenticate(&state, &req).await?;
+    match db
+        .send(FollowProfile {
+            auth,
+            username: path.username.to_owned(),
         })
-        .and_then(|res| match res {
-            Ok(res) => Ok(HttpResponse::Ok().json(res)),
-            Err(e) => Ok(e.error_response()),
-        })
+        .await?
+    {
+        Ok(res) => Ok(HttpResponse::Ok().json(res)),
+        Err(e) => Ok(e.error_response()),
+    }
 }
 
-pub fn unfollow(
+pub async fn unfollow(
     state: Data<AppState>,
     (path, req): (Path<ProfilePath>, HttpRequest),
-) -> impl Future<Item = HttpResponse, Error = Error> {
+) -> Result<HttpResponse, Error> {
     let db = state.db.clone();
 
-    authenticate(&state, &req)
-        .and_then(move |auth| {
-            db.send(UnfollowProfile {
-                auth,
-                username: path.username.to_owned(),
-            })
-            .from_err()
+    let auth = authenticate(&state, &req).await?;
+    match db
+        .send(UnfollowProfile {
+            auth,
+            username: path.username.to_owned(),
         })
-        .and_then(|res| match res {
-            Ok(res) => Ok(HttpResponse::Ok().json(res)),
-            Err(e) => Ok(e.error_response()),
-        })
+        .await?
+    {
+        Ok(res) => Ok(HttpResponse::Ok().json(res)),
+        Err(e) => Ok(e.error_response()),
+    }
 }
