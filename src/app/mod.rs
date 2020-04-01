@@ -29,7 +29,7 @@ pub async fn start() {
             db: database_address.clone(),
         };
         App::new()
-            .data(Data::new(state))
+            .data(state)
             .wrap(Logger::default())
             .configure(routes)
     })
